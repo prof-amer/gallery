@@ -844,6 +844,19 @@ constructor(
           }
         }
 
+        // Fallback: load bundled allowlist from assets.
+        if (modelAllowlist == null) {
+          Log.w(TAG, "Trying to load model allowlist from bundled assets")
+          try {
+            val assetJson =
+              context.assets.open("model_allowlist.json").bufferedReader().use { it.readText() }
+            modelAllowlist = Gson().fromJson(assetJson, ModelAllowlist::class.java)
+            Log.d(TAG, "Done: loading model allowlist from bundled assets")
+          } catch (e: Exception) {
+            Log.e(TAG, "Failed to load model allowlist from assets", e)
+          }
+        }
+
         if (modelAllowlist == null) {
           _uiState.update {
             uiState.value.copy(loadingModelAllowlistError = "Failed to load model list")
