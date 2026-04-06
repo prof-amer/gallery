@@ -25,7 +25,8 @@
         "llm_prompt_lab",
         "llm_agent_chat",
         "llm_ask_image",
-        "llm_ask_audio"
+        "llm_ask_audio",
+        "llm_voice_chat"
       ],
       "bestForTaskTypes": [
         "llm_chat",
@@ -60,7 +61,8 @@
         "llm_prompt_lab",
         "llm_agent_chat",
         "llm_ask_image",
-        "llm_ask_audio"
+        "llm_ask_audio",
+        "llm_voice_chat"
       ],
       "bestForTaskTypes": [
         "llm_chat",
@@ -87,7 +89,7 @@
         "maxTokens": 4096,
         "accelerators": "cpu,gpu"
       },
-      "taskTypes": ["llm_chat", "llm_prompt_lab", "llm_ask_image", "llm_ask_audio"],
+      "taskTypes": ["llm_chat", "llm_prompt_lab", "llm_ask_image", "llm_ask_audio", "llm_voice_chat"],
       "bestForTaskTypes": ["llm_ask_image", "llm_ask_audio"]
     },
     {
@@ -107,7 +109,7 @@
         "maxTokens": 4096,
         "accelerators": "cpu,gpu"
       },
-      "taskTypes": ["llm_chat", "llm_prompt_lab", "llm_ask_image", "llm_ask_audio"]
+      "taskTypes": ["llm_chat", "llm_prompt_lab", "llm_ask_image", "llm_ask_audio", "llm_voice_chat"]
     },
     {
       "name": "Gemma3-1B-IT",
@@ -124,7 +126,7 @@
         "maxTokens": 1024,
         "accelerators": "gpu,cpu"
       },
-      "taskTypes": ["llm_chat", "llm_prompt_lab"],
+      "taskTypes": ["llm_chat", "llm_prompt_lab", "llm_voice_chat"],
       "bestForTaskTypes": ["llm_chat", "llm_prompt_lab"]
     },
     {
@@ -142,7 +144,7 @@
         "maxTokens": 4096,
         "accelerators": "gpu,cpu"
       },
-      "taskTypes": ["llm_chat", "llm_prompt_lab"]
+      "taskTypes": ["llm_chat", "llm_prompt_lab", "llm_voice_chat"]
     },
     {
       "name": "DeepSeek-R1-Distill-Qwen-1.5B",
@@ -159,7 +161,7 @@
         "maxTokens": 4096,
         "accelerators": "gpu,cpu"
       },
-      "taskTypes": ["llm_chat", "llm_prompt_lab"]
+      "taskTypes": ["llm_chat", "llm_prompt_lab", "llm_voice_chat"]
     },
     {
       "name": "TinyGarden-270M",
