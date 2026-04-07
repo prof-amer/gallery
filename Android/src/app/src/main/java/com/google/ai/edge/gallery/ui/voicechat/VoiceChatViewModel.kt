@@ -78,15 +78,12 @@ constructor(@ApplicationContext private val context: Context) :
   private var currentTask: Task? = null
   private var currentModelManagerViewModel: ModelManagerViewModel? = null
   private var autoListenAfterSpeaking = true
+  private var recognitionLocale: Locale = Locale.getDefault()
 
-  private val recognizerIntent: Intent =
+  private fun createRecognizerIntent(): Intent =
     Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
       putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-      putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
-      putExtra(
-        "android.speech.extra.EXTRA_ADDITIONAL_LANGUAGES",
-        arrayOf("ja-JP", "en-US", "zh-CN", "ko-KR", "es-ES", "fr-FR", "de-DE"),
-      )
+      putExtra(RecognizerIntent.EXTRA_LANGUAGE, recognitionLocale.toLanguageTag())
       putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
       putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
     }
@@ -123,7 +120,7 @@ constructor(@ApplicationContext private val context: Context) :
         amplitude = 0,
       )
     }
-    speechRecognizer?.startListening(recognizerIntent)
+    speechRecognizer?.startListening(createRecognizerIntent())
   }
 
   fun stopListeningAndSend() {
@@ -219,6 +216,8 @@ constructor(@ApplicationContext private val context: Context) :
 
       if (responseText.isNotEmpty()) {
         val detectedLocale = LanguageDetector.detectLanguage(responseText)
+        // Update recognition language so the next listening cycle matches the conversation language.
+        recognitionLocale = detectedLocale
         _voiceUiState.update { it.copy(voiceState = VoiceChatState.SPEAKING) }
         ttsManager?.speak(
           text = cleanTextForTts(responseText),
@@ -234,7 +233,7 @@ constructor(@ApplicationContext private val context: Context) :
                     amplitude = 0,
                   )
                 }
-                speechRecognizer?.startListening(recognizerIntent)
+                speechRecognizer?.startListening(createRecognizerIntent())
               } else {
                 _voiceUiState.update { it.copy(voiceState = VoiceChatState.IDLE) }
               }
