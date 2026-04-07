@@ -69,6 +69,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.data.BuiltInTaskId
 import com.google.ai.edge.gallery.ui.common.AudioAnimation
+import com.google.ai.edge.gallery.ui.modelmanager.ModelDownloadStatusType
 import com.google.ai.edge.gallery.ui.modelmanager.ModelInitializationStatusType
 import com.google.ai.edge.gallery.ui.modelmanager.ModelManagerViewModel
 
@@ -107,8 +108,18 @@ fun VoiceChatScreen(
     }
   }
 
-  LaunchedEffect(selectedModel) {
+  // Ensure model is initialized for Voice Chat.
+  val curDownloadStatus = modelManagerUiState.modelDownloadStatus[selectedModel.name]
+  LaunchedEffect(selectedModel, curDownloadStatus, modelInitStatus) {
     viewModel.initialize(selectedModel, task, modelManagerViewModel)
+    // If model is downloaded but not initialized, trigger initialization.
+    if (
+      curDownloadStatus?.status == ModelDownloadStatusType.SUCCEEDED &&
+        modelInitStatus?.status != ModelInitializationStatusType.INITIALIZED &&
+        modelInitStatus?.status != ModelInitializationStatusType.INITIALIZING
+    ) {
+      modelManagerViewModel.initializeModel(context, task = task, model = selectedModel)
+    }
   }
 
   DisposableEffect(Unit) { onDispose { viewModel.interrupt() } }
