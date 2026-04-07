@@ -33,6 +33,7 @@ import com.google.ai.edge.gallery.ui.llmchat.LlmChatViewModelBase
 import com.google.ai.edge.gallery.ui.modelmanager.ModelManagerViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.Locale
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -81,7 +82,7 @@ constructor(@ApplicationContext private val context: Context) :
   private val recognizerIntent: Intent =
     Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
       putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-      putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-US")
+      putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
       putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
       putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
     }
@@ -213,9 +214,11 @@ constructor(@ApplicationContext private val context: Context) :
       _voiceUiState.update { it.copy(responseText = responseText) }
 
       if (responseText.isNotEmpty()) {
+        val detectedLocale = LanguageDetector.detectLanguage(responseText)
         _voiceUiState.update { it.copy(voiceState = VoiceChatState.SPEAKING) }
         ttsManager?.speak(
           text = cleanTextForTts(responseText),
+          locale = detectedLocale,
           onStart = { Log.d(TAG, "TTS started") },
           onDone = {
             viewModelScope.launch(Dispatchers.Main) {

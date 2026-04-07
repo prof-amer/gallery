@@ -41,7 +41,11 @@ private const val VOICE_CHAT_SYSTEM_PROMPT =
   "You are a voice assistant. Respond in plain, conversational language. " +
     "Do NOT use emojis, markdown formatting, bullet points, numbered lists, " +
     "code blocks, or any special characters. Keep responses concise and natural, " +
-    "as they will be spoken aloud."
+    "as they will be spoken aloud. " +
+    "Always respond in the same language the user speaks to you. " +
+    "If the user speaks Japanese, respond entirely in Japanese. " +
+    "If the user speaks English, respond entirely in English. " +
+    "Match the user's language exactly."
 
 class LlmVoiceChatTask @Inject constructor() : CustomTask {
   override val task: Task =
