@@ -154,6 +154,19 @@ constructor(@ApplicationContext private val context: Context) :
     val model = currentModel ?: return
     val task = currentTask ?: return
 
+    // Check if the model is ready before sending.
+    if (model.instance == null) {
+      Log.w(TAG, "Model instance is null, cannot run inference. Model may still be initializing.")
+      _voiceUiState.update {
+        it.copy(
+          voiceState = VoiceChatState.IDLE,
+          responseText = "Model is still loading. Please wait and try again.",
+        )
+      }
+      ttsManager?.speak(text = "Model is still loading. Please wait and try again.")
+      return
+    }
+
     _voiceUiState.update {
       it.copy(
         voiceState = VoiceChatState.PROCESSING,
