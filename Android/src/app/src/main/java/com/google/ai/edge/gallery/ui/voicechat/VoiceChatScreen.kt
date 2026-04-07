@@ -69,6 +69,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.data.BuiltInTaskId
 import com.google.ai.edge.gallery.ui.common.AudioAnimation
+import com.google.ai.edge.gallery.ui.modelmanager.ModelInitializationStatusType
 import com.google.ai.edge.gallery.ui.modelmanager.ModelManagerViewModel
 
 @Composable
@@ -83,6 +84,11 @@ fun VoiceChatScreen(
   val selectedModel = modelManagerUiState.selectedModel
   val task = modelManagerViewModel.getTaskById(id = BuiltInTaskId.LLM_VOICE_CHAT)!!
   val context = LocalContext.current
+
+  // Check model readiness.
+  val modelInitStatus = modelManagerUiState.modelInitializationStatus[selectedModel.name]
+  val isModelReady = modelInitStatus?.status == ModelInitializationStatusType.INITIALIZED
+  val isModelInitializing = modelInitStatus?.status == ModelInitializationStatusType.INITIALIZING
 
   var permissionGranted by remember { mutableStateOf(false) }
   val permissionLauncher =
@@ -163,16 +169,24 @@ fun VoiceChatScreen(
       Spacer(modifier = Modifier.height(32.dp))
 
       // Central orb / mic button.
-      if (permissionGranted) {
-        VoiceChatOrbButton(
-          voiceState = voiceUiState.voiceState,
-          onTap = { viewModel.onMicTapped() },
-        )
-      } else {
+      if (!permissionGranted) {
         Text(
           "Microphone permission is required for voice chat.",
           color = Color.White.copy(alpha = 0.7f),
           textAlign = TextAlign.Center,
+        )
+      } else if (!isModelReady) {
+        // Model loading state.
+        VoiceChatOrbButton(
+          voiceState = VoiceChatState.PROCESSING,
+          onTap = {},
+          enabled = false,
+        )
+      } else {
+        VoiceChatOrbButton(
+          voiceState = voiceUiState.voiceState,
+          onTap = { viewModel.onMicTapped() },
+          enabled = true,
         )
       }
 
@@ -181,11 +195,18 @@ fun VoiceChatScreen(
       // Status label.
       Text(
         text =
-          when (voiceUiState.voiceState) {
-            VoiceChatState.IDLE -> stringResource(R.string.voicechat_tap_to_talk)
-            VoiceChatState.LISTENING -> stringResource(R.string.voicechat_listening)
-            VoiceChatState.PROCESSING -> stringResource(R.string.voicechat_thinking)
-            VoiceChatState.SPEAKING -> stringResource(R.string.voicechat_tap_to_interrupt)
+          when {
+            !isModelReady && isModelInitializing -> "Initializing model\u2026"
+            !isModelReady -> "Waiting for model\u2026"
+            voiceUiState.voiceState == VoiceChatState.IDLE ->
+              stringResource(R.string.voicechat_tap_to_talk)
+            voiceUiState.voiceState == VoiceChatState.LISTENING ->
+              stringResource(R.string.voicechat_listening)
+            voiceUiState.voiceState == VoiceChatState.PROCESSING ->
+              stringResource(R.string.voicechat_thinking)
+            voiceUiState.voiceState == VoiceChatState.SPEAKING ->
+              stringResource(R.string.voicechat_tap_to_interrupt)
+            else -> ""
           },
         color = Color.White.copy(alpha = 0.8f),
         style = MaterialTheme.typography.bodyLarge,
@@ -217,6 +238,7 @@ private fun VoiceChatOrbButton(
   voiceState: VoiceChatState,
   onTap: () -> Unit,
   modifier: Modifier = Modifier,
+  enabled: Boolean = true,
 ) {
   val infiniteTransition = rememberInfiniteTransition(label = "orb_pulse")
   val pulseScale by
@@ -232,11 +254,13 @@ private fun VoiceChatOrbButton(
   val scale = if (isActive) pulseScale else 1f
 
   val bgColor =
-    when (voiceState) {
-      VoiceChatState.IDLE -> Color.White.copy(alpha = 0.15f)
-      VoiceChatState.LISTENING -> Color(0xFF4CAF50).copy(alpha = 0.8f)
-      VoiceChatState.PROCESSING -> Color.White.copy(alpha = 0.1f)
-      VoiceChatState.SPEAKING -> Color(0xFF2196F3).copy(alpha = 0.8f)
+    when {
+      !enabled -> Color.White.copy(alpha = 0.08f)
+      voiceState == VoiceChatState.IDLE -> Color.White.copy(alpha = 0.15f)
+      voiceState == VoiceChatState.LISTENING -> Color(0xFF4CAF50).copy(alpha = 0.8f)
+      voiceState == VoiceChatState.PROCESSING -> Color.White.copy(alpha = 0.1f)
+      voiceState == VoiceChatState.SPEAKING -> Color(0xFF2196F3).copy(alpha = 0.8f)
+      else -> Color.White.copy(alpha = 0.15f)
     }
 
   Box(
@@ -246,18 +270,25 @@ private fun VoiceChatOrbButton(
         .size(120.dp)
         .clip(CircleShape)
         .background(bgColor)
-        .clickable { onTap() },
+        .then(if (enabled) Modifier.clickable { onTap() } else Modifier),
     contentAlignment = Alignment.Center,
   ) {
-    when (voiceState) {
-      VoiceChatState.PROCESSING -> {
+    when {
+      !enabled -> {
+        CircularProgressIndicator(
+          modifier = Modifier.size(48.dp),
+          color = Color.White.copy(alpha = 0.5f),
+          strokeWidth = 3.dp,
+        )
+      }
+      voiceState == VoiceChatState.PROCESSING -> {
         CircularProgressIndicator(
           modifier = Modifier.size(48.dp),
           color = Color.White,
           strokeWidth = 3.dp,
         )
       }
-      VoiceChatState.SPEAKING -> {
+      voiceState == VoiceChatState.SPEAKING -> {
         Icon(
           Icons.Filled.Stop,
           contentDescription = "Stop speaking",
