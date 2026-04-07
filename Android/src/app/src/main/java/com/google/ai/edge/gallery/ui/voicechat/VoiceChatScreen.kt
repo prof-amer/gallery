@@ -228,8 +228,8 @@ fun VoiceChatScreen(
         style = MaterialTheme.typography.bodyLarge,
       )
 
-      // Language toggle (only shown when idle or listening).
-      if (isModelReady &&
+      // Language toggle (only for STT fallback mode, hidden in native audio mode).
+      if (isModelReady && !voiceUiState.nativeAudioMode &&
         (voiceUiState.voiceState == VoiceChatState.IDLE ||
           voiceUiState.voiceState == VoiceChatState.LISTENING)
       ) {

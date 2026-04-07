@@ -74,7 +74,7 @@ class LlmVoiceChatTask @Inject constructor() : CustomTask {
       context = context,
       model = model,
       supportImage = false,
-      supportAudio = false,
+      supportAudio = model.llmSupportAudio,
       systemInstruction = Contents.of(VOICE_CHAT_SYSTEM_PROMPT),
       onDone = onDone,
       coroutineScope = coroutineScope,
