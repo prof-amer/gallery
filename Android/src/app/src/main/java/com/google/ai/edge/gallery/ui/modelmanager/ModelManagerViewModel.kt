@@ -828,19 +828,31 @@ constructor(
         }
 
         if (modelAllowlist == null) {
-          // Load from github.
-          var version = BuildConfig.VERSION_NAME.replace(".", "_")
-          val url = getAllowlistUrl(version)
-          Log.d(TAG, "Loading model allowlist from internet. Url: $url")
-          val data = getJsonResponse<ModelAllowlist>(url = url)
-          modelAllowlist = data?.jsonObj
+          // Try bundled allowlist from assets first (includes latest task types).
+          try {
+            val assetJson =
+              context.assets.open("model_allowlist.json").bufferedReader().use { it.readText() }
+            modelAllowlist = Gson().fromJson(assetJson, ModelAllowlist::class.java)
+            Log.d(TAG, "Done: loading model allowlist from bundled assets")
+          } catch (e: Exception) {
+            Log.d(TAG, "No bundled allowlist in assets", e)
+          }
 
+          // If no bundled allowlist, load from github.
           if (modelAllowlist == null) {
-            Log.w(TAG, "Failed to load model allowlist from internet. Trying to load it from disk")
-            modelAllowlist = readModelAllowlistFromDisk()
-          } else {
-            Log.d(TAG, "Done: loading model allowlist from internet")
-            saveModelAllowlistToDisk(modelAllowlistContent = data?.textContent ?: "{}")
+            var version = BuildConfig.VERSION_NAME.replace(".", "_")
+            val url = getAllowlistUrl(version)
+            Log.d(TAG, "Loading model allowlist from internet. Url: $url")
+            val data = getJsonResponse<ModelAllowlist>(url = url)
+            modelAllowlist = data?.jsonObj
+
+            if (modelAllowlist == null) {
+              Log.w(TAG, "Failed to load model allowlist from internet. Trying to load it from disk")
+              modelAllowlist = readModelAllowlistFromDisk()
+            } else {
+              Log.d(TAG, "Done: loading model allowlist from internet")
+              saveModelAllowlistToDisk(modelAllowlistContent = data?.textContent ?: "{}")
+            }
           }
         }
 

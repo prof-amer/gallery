@@ -16,7 +16,7 @@
         "maxTokens": 4096,
         "accelerators": "cpu,gpu"
       },
-      "taskTypes": ["llm_chat", "llm_prompt_lab", "llm_ask_image"]
+      "taskTypes": ["llm_chat", "llm_prompt_lab", "llm_ask_image", "llm_voice_chat"]
     },
     {
       "name": "Gemma-3n-E4B-it-int4",
@@ -34,7 +34,7 @@
         "maxTokens": 4096,
         "accelerators": "cpu,gpu"
       },
-      "taskTypes": ["llm_chat", "llm_prompt_lab", "llm_ask_image"]
+      "taskTypes": ["llm_chat", "llm_prompt_lab", "llm_ask_image", "llm_voice_chat"]
     },
     {
       "name": "Gemma3-1B-IT q4",
@@ -51,7 +51,7 @@
         "maxTokens": 1024,
         "accelerators": "gpu,cpu"
       },
-      "taskTypes": ["llm_chat", "llm_prompt_lab"]
+      "taskTypes": ["llm_chat", "llm_prompt_lab", "llm_voice_chat"]
     },
     {
       "name": "Qwen2.5-1.5B-Instruct q8",
@@ -68,7 +68,7 @@
         "maxTokens": 1024,
         "accelerators": "cpu"
       },
-      "taskTypes": ["llm_chat", "llm_prompt_lab"]
+      "taskTypes": ["llm_chat", "llm_prompt_lab", "llm_voice_chat"]
     }
   ]
 }
