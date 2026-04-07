@@ -28,6 +28,7 @@ import com.google.ai.edge.gallery.data.Category
 import com.google.ai.edge.gallery.data.Model
 import com.google.ai.edge.gallery.data.Task
 import com.google.ai.edge.gallery.runtime.runtimeHelper
+import com.google.ai.edge.litertlm.Contents
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -35,6 +36,12 @@ import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoSet
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
+
+private const val VOICE_CHAT_SYSTEM_PROMPT =
+  "You are a voice assistant. Respond in plain, conversational language. " +
+    "Do NOT use emojis, markdown formatting, bullet points, numbered lists, " +
+    "code blocks, or any special characters. Keep responses concise and natural, " +
+    "as they will be spoken aloud."
 
 class LlmVoiceChatTask @Inject constructor() : CustomTask {
   override val task: Task =
@@ -64,6 +71,7 @@ class LlmVoiceChatTask @Inject constructor() : CustomTask {
       model = model,
       supportImage = false,
       supportAudio = false,
+      systemInstruction = Contents.of(VOICE_CHAT_SYSTEM_PROMPT),
       onDone = onDone,
       coroutineScope = coroutineScope,
     )

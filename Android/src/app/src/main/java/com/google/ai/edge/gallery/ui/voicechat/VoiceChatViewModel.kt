@@ -215,7 +215,7 @@ constructor(@ApplicationContext private val context: Context) :
       if (responseText.isNotEmpty()) {
         _voiceUiState.update { it.copy(voiceState = VoiceChatState.SPEAKING) }
         ttsManager?.speak(
-          text = responseText,
+          text = cleanTextForTts(responseText),
           onStart = { Log.d(TAG, "TTS started") },
           onDone = {
             viewModelScope.launch(Dispatchers.Main) {
@@ -301,6 +301,28 @@ constructor(@ApplicationContext private val context: Context) :
       val clamped = rmsdB.coerceIn(AUDIO_METER_MIN_DB, AUDIO_METER_MAX_DB)
       return ((clamped - AUDIO_METER_MIN_DB) * 65535f / (AUDIO_METER_MAX_DB - AUDIO_METER_MIN_DB))
         .toInt()
+    }
+
+    /** Strip emojis, markdown, and other non-speech artifacts from LLM output for TTS. */
+    private fun cleanTextForTts(text: String): String {
+      return text
+        // Remove emoji characters.
+        .replace(Regex("[\\p{So}\\p{Cn}\\uFE0F\\u200D]"), "")
+        // Remove markdown bold/italic markers.
+        .replace(Regex("\\*+"), "")
+        // Remove markdown headers.
+        .replace(Regex("^#{1,6}\\s+", RegexOption.MULTILINE), "")
+        // Remove markdown links, keep text.
+        .replace(Regex("\\[([^]]+)]\\([^)]+\\)"), "$1")
+        // Remove markdown code blocks.
+        .replace(Regex("```[\\s\\S]*?```"), "")
+        // Remove inline code.
+        .replace(Regex("`([^`]+)`"), "$1")
+        // Remove bullet points.
+        .replace(Regex("^\\s*[-*•]\\s+", RegexOption.MULTILINE), "")
+        // Collapse multiple whitespace/newlines.
+        .replace(Regex("\\s+"), " ")
+        .trim()
     }
   }
 }
