@@ -64,6 +64,10 @@ class HoldToDictateViewModel @Inject constructor(@ApplicationContext private val
       Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
         putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
         putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
+        putExtra(
+          "android.speech.extra.EXTRA_ADDITIONAL_LANGUAGES",
+          arrayOf("ja-JP", "en-US", "zh-CN", "ko-KR", "es-ES", "fr-FR", "de-DE"),
+        )
         putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
         putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
       }
