@@ -169,7 +169,10 @@ constructor(@ApplicationContext private val context: Context) :
     generateResponse(
       model = model,
       input = text,
-      onDone = { onLlmResponseDone(model) },
+      onDone = {
+        Log.d(TAG, "LLM inference done, extracting response")
+        onLlmResponseDone(model)
+      },
       onError = { errorMessage ->
         Log.e(TAG, "LLM error: $errorMessage")
         handleError(
@@ -179,7 +182,9 @@ constructor(@ApplicationContext private val context: Context) :
           modelManagerViewModel = currentModelManagerViewModel!!,
           errorMessage = errorMessage,
         )
-        _voiceUiState.update { it.copy(voiceState = VoiceChatState.IDLE) }
+        viewModelScope.launch(Dispatchers.Main) {
+          _voiceUiState.update { it.copy(voiceState = VoiceChatState.IDLE) }
+        }
       },
     )
   }
@@ -189,38 +194,41 @@ constructor(@ApplicationContext private val context: Context) :
     val lastMessage =
       getLastMessageWithTypeAndSide(model, ChatMessageType.TEXT, ChatSide.AGENT) as? ChatMessageText
     val responseText = lastMessage?.content ?: ""
+    Log.d(TAG, "LLM response: '${responseText.take(100)}'")
 
-    _voiceUiState.update { it.copy(responseText = responseText) }
+    viewModelScope.launch(Dispatchers.Main) {
+      _voiceUiState.update { it.copy(responseText = responseText) }
 
-    if (responseText.isNotEmpty()) {
-      _voiceUiState.update { it.copy(voiceState = VoiceChatState.SPEAKING) }
-      ttsManager?.speak(
-        text = responseText,
-        onStart = { Log.d(TAG, "TTS started") },
-        onDone = {
-          viewModelScope.launch(Dispatchers.Main) {
-            if (autoListenAfterSpeaking) {
-              _voiceUiState.update {
-                it.copy(
-                  voiceState = VoiceChatState.LISTENING,
-                  partialTranscription = "",
-                  amplitude = 0,
-                )
+      if (responseText.isNotEmpty()) {
+        _voiceUiState.update { it.copy(voiceState = VoiceChatState.SPEAKING) }
+        ttsManager?.speak(
+          text = responseText,
+          onStart = { Log.d(TAG, "TTS started") },
+          onDone = {
+            viewModelScope.launch(Dispatchers.Main) {
+              if (autoListenAfterSpeaking) {
+                _voiceUiState.update {
+                  it.copy(
+                    voiceState = VoiceChatState.LISTENING,
+                    partialTranscription = "",
+                    amplitude = 0,
+                  )
+                }
+                speechRecognizer?.startListening(recognizerIntent)
+              } else {
+                _voiceUiState.update { it.copy(voiceState = VoiceChatState.IDLE) }
               }
-              speechRecognizer?.startListening(recognizerIntent)
-            } else {
+            }
+          },
+          onError = {
+            viewModelScope.launch(Dispatchers.Main) {
               _voiceUiState.update { it.copy(voiceState = VoiceChatState.IDLE) }
             }
-          }
-        },
-        onError = {
-          viewModelScope.launch(Dispatchers.Main) {
-            _voiceUiState.update { it.copy(voiceState = VoiceChatState.IDLE) }
-          }
-        },
-      )
-    } else {
-      _voiceUiState.update { it.copy(voiceState = VoiceChatState.IDLE) }
+          },
+        )
+      } else {
+        _voiceUiState.update { it.copy(voiceState = VoiceChatState.IDLE) }
+      }
     }
   }
 
