@@ -110,15 +110,17 @@ fun VoiceChatScreen(
 
   // Ensure model is initialized for Voice Chat.
   val curDownloadStatus = modelManagerUiState.modelDownloadStatus[selectedModel.name]
-  LaunchedEffect(selectedModel, curDownloadStatus, modelInitStatus) {
+  val isDownloaded = curDownloadStatus?.status == ModelDownloadStatusType.SUCCEEDED
+  LaunchedEffect(selectedModel.name) {
     viewModel.initialize(selectedModel, task, modelManagerViewModel)
-    // If model is downloaded but not initialized, trigger initialization.
-    if (
-      curDownloadStatus?.status == ModelDownloadStatusType.SUCCEEDED &&
-        modelInitStatus?.status != ModelInitializationStatusType.INITIALIZED &&
-        modelInitStatus?.status != ModelInitializationStatusType.INITIALIZING
-    ) {
-      modelManagerViewModel.initializeModel(context, task = task, model = selectedModel)
+    // Force-initialize the model if downloaded but not ready.
+    if (isDownloaded && !isModelReady) {
+      modelManagerViewModel.initializeModel(
+        context = context,
+        task = task,
+        model = selectedModel,
+        force = true,
+      )
     }
   }
 
