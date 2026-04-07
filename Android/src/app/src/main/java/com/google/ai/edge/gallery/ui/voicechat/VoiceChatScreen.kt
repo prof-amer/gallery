@@ -34,12 +34,15 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Stop
@@ -225,6 +228,18 @@ fun VoiceChatScreen(
         style = MaterialTheme.typography.bodyLarge,
       )
 
+      // Language toggle (only shown when idle or listening).
+      if (isModelReady &&
+        (voiceUiState.voiceState == VoiceChatState.IDLE ||
+          voiceUiState.voiceState == VoiceChatState.LISTENING)
+      ) {
+        Spacer(modifier = Modifier.height(16.dp))
+        LanguageToggle(
+          selected = voiceUiState.recognitionLanguage,
+          onToggle = { viewModel.toggleLanguage() },
+        )
+      }
+
       Spacer(modifier = Modifier.height(32.dp))
 
       // Response text (shown during SPEAKING and after).
@@ -316,6 +331,38 @@ private fun VoiceChatOrbButton(
           tint = Color.White,
           modifier = Modifier.size(48.dp),
         )
+      }
+    }
+  }
+}
+
+@Composable
+private fun LanguageToggle(
+  selected: RecognitionLanguage,
+  onToggle: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  Row(
+    modifier = modifier
+      .clip(RoundedCornerShape(20.dp))
+      .background(Color.White.copy(alpha = 0.1f))
+      .clickable { onToggle() }
+      .padding(horizontal = 4.dp, vertical = 4.dp),
+    horizontalArrangement = Arrangement.Center,
+  ) {
+    for (lang in RecognitionLanguage.entries) {
+      val isSelected = lang == selected
+      Text(
+        text = lang.label,
+        color = if (isSelected) Color.Black else Color.White.copy(alpha = 0.6f),
+        style = MaterialTheme.typography.labelMedium,
+        modifier = Modifier
+          .clip(RoundedCornerShape(16.dp))
+          .background(if (isSelected) Color.White else Color.Transparent)
+          .padding(horizontal = 16.dp, vertical = 6.dp),
+      )
+      if (lang != RecognitionLanguage.entries.last()) {
+        Spacer(modifier = Modifier.width(2.dp))
       }
     }
   }

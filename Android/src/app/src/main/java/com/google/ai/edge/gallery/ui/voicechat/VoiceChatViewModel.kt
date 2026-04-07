@@ -54,12 +54,19 @@ enum class VoiceChatState {
   SPEAKING,
 }
 
+/** Supported recognition languages for the voice chat language toggle. */
+enum class RecognitionLanguage(val tag: String, val label: String) {
+  ENGLISH("en-US", "EN"),
+  JAPANESE("ja-JP", "JP"),
+}
+
 data class VoiceChatUiState(
   val voiceState: VoiceChatState = VoiceChatState.IDLE,
   val partialTranscription: String = "",
   val finalTranscription: String = "",
   val responseText: String = "",
   val amplitude: Int = 0,
+  val recognitionLanguage: RecognitionLanguage = RecognitionLanguage.ENGLISH,
 )
 
 @HiltViewModel
@@ -78,15 +85,23 @@ constructor(@ApplicationContext private val context: Context) :
   private var currentTask: Task? = null
   private var currentModelManagerViewModel: ModelManagerViewModel? = null
   private var autoListenAfterSpeaking = true
-  private var recognitionLocale: Locale = Locale.getDefault()
 
   private fun createRecognizerIntent(): Intent =
     Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
       putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-      putExtra(RecognizerIntent.EXTRA_LANGUAGE, recognitionLocale.toLanguageTag())
+      putExtra(RecognizerIntent.EXTRA_LANGUAGE, _voiceUiState.value.recognitionLanguage.tag)
       putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
       putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
     }
+
+  fun toggleLanguage() {
+    if (_voiceUiState.value.voiceState != VoiceChatState.IDLE) return
+    _voiceUiState.update {
+      val next = if (it.recognitionLanguage == RecognitionLanguage.ENGLISH)
+        RecognitionLanguage.JAPANESE else RecognitionLanguage.ENGLISH
+      it.copy(recognitionLanguage = next)
+    }
+  }
 
   fun initialize(model: Model, task: Task, modelManagerViewModel: ModelManagerViewModel) {
     currentModel = model
@@ -217,7 +232,11 @@ constructor(@ApplicationContext private val context: Context) :
       if (responseText.isNotEmpty()) {
         val detectedLocale = LanguageDetector.detectLanguage(responseText)
         // Update recognition language so the next listening cycle matches the conversation language.
-        recognitionLocale = detectedLocale
+        val detectedRecognitionLang = when (detectedLocale.language) {
+          "ja" -> RecognitionLanguage.JAPANESE
+          else -> RecognitionLanguage.ENGLISH
+        }
+        _voiceUiState.update { it.copy(recognitionLanguage = detectedRecognitionLang) }
         _voiceUiState.update { it.copy(voiceState = VoiceChatState.SPEAKING) }
         ttsManager?.speak(
           text = cleanTextForTts(responseText),
